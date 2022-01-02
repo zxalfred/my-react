@@ -24,13 +24,7 @@ function createDom(fiber) {
     ? document.createTextNode('')
     : document.createElement(fiber.type)
 
-  const isProperty = key => key !== 'children'
-  Object.keys(fiber.props)
-    .filter(isProperty)
-    .forEach(key => {
-      dom[key] = fiber.props[key]
-    })
-  
+  updateDom(dom, {}, fiber.props)
   return dom
 }
 
@@ -167,9 +161,43 @@ function performUnitOfWork(fiber) {
   }
 }
 
+let wipFiber = null
+let hookIndex = null
+
 function updateFunctionComponent(fiber) {
+  wipFiber = fiber
+  hookIndex = 0
+  wipFiber.hooks = []
   const children = [fiber.type(fiber.props)]
   reconcileChildren(fiber, children)
+}
+
+function useState(initial) {
+  const oldHook = wipFiber.alternate?.hooks?.[hookIndex]
+  const hook = {
+    state: oldHook ? oldHook.state : initial,
+    queue: [],
+  }
+
+  const actions = oldHook ? oldHook.queue : []
+  actions.forEach(action => {
+    hook.state = action(hook.state)
+  })
+
+  const setState = action => {
+    hook.queue.push(action)
+    wipRoot = {
+      dom: currentRoot.dom,
+      props: currentRoot.props,
+      alternate: currentRoot,
+    }
+    nextUnitOfWork = wipRoot
+    deletions = []
+  }
+
+  wipFiber.hooks.push(hook)
+  hookIndex++
+  return [hook.state, setState]
 }
 
 function updateHostComponent(fiber) {
@@ -231,14 +259,17 @@ function reconcileChildren(wipFiber, elements) {
 const MyReact = {
   createElement,
   render,
+  useState,
 }
 
 /** @jsx MyReact.createElement */
-const element = (
-  <div style="background: cornflowerblue">
-    <h1>Hello World</h1>
-    <h2 style="text-align: right">from my react</h2>
-  </div>
-)
+function Counter() {
+  const [state, setState] = MyReact.useState(1)
+  return (
+    <h1 onClick={() => setState(c => c + 1)}>
+      Count: {state}
+    </h1>
+  )
+}
 
-MyReact.render(element, document.querySelector('#root'))
+MyReact.render(<Counter />, document.querySelector('#root'))
