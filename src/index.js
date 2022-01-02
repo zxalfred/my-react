@@ -125,15 +125,16 @@ let deletions = null
 function workLoop(deadline) {
   let shouldYield = false
   while (nextUnitOfWork && !shouldYield) {
+    console.log('next work', nextUnitOfWork)
     nextUnitOfWork = performUnitOfWork(nextUnitOfWork)
     shouldYield = deadline.timeRemaining() < 1
   }
 
   if (!nextUnitOfWork && wipRoot) {
     commitRoot()
+  } else {
+    requestIdleCallback(workLoop)
   }
-
-  requestIdleCallback(workLoop)
 }
 
 requestIdleCallback(workLoop)
@@ -192,6 +193,7 @@ function useState(initial) {
     }
     nextUnitOfWork = wipRoot
     deletions = []
+    requestIdleCallback(workLoop)
   }
 
   wipFiber.hooks.push(hook)
