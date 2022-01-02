@@ -39,7 +39,7 @@ function updateDom(dom, prevProps, nextProps) {
     .filter(key => !(key in nextProps) || isNew(prevProps, nextProps)(key))
     .forEach(key => {
       const eventType = key.toLowerCase().substring(2)
-      dom.removeEventListner(eventType, prevProps[key])
+      dom.removeEventListener(eventType, prevProps[key])
     })
   
   // remove old properties
@@ -78,12 +78,11 @@ function commitRoot() {
 function commitWork(fiber) {
   if (!fiber) return
 
- 
   let domParentFiber = fiber.parent
   while (!domParentFiber.dom) {
     domParentFiber = domParentFiber.parent
   }
- const domParent = domParentFiber.dom
+  const domParent = domParentFiber.dom
 
   if (fiber.effectTag === 'PLACEMENT' && fiber.dom !== null) {
     domParent.appendChild(fiber.dom)
@@ -150,7 +149,7 @@ function performUnitOfWork(fiber) {
   if (fiber.child) {
     return fiber.child
   }
-  
+
   let nextFiber = fiber
   while (nextFiber) {
     if (nextFiber.sibling) {
@@ -211,8 +210,8 @@ function reconcileChildren(wipFiber, elements) {
   let index = 0
   let oldFiber = wipFiber.alternate && wipFiber.alternate.child
   let prevSibling = null
-
-  while (index < elements.length || oldFiber !== null) {
+  
+  while (index < elements.length || oldFiber) {
     const element = elements[index]
     let newFiber = null
 
@@ -245,9 +244,13 @@ function reconcileChildren(wipFiber, elements) {
       deletions.push(oldFiber)
     }
 
+    if (oldFiber) {
+      oldFiber = oldFiber.sibling
+    }
+
     if (index === 0) {
       wipFiber.child = newFiber
-    } else {
+    } else if (element) {
       prevSibling.sibling = newFiber
     }
 
@@ -259,7 +262,7 @@ function reconcileChildren(wipFiber, elements) {
 const MyReact = {
   createElement,
   render,
-  useState,
+  useState
 }
 
 /** @jsx MyReact.createElement */
